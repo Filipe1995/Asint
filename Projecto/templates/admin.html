@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+	<style>
+		.inactive{
+			display: none;
+		}
+
+		.usersBuildList{
+			list-style-type: none;
+			padding: 10px 0px;
+		}
+		.usersBuildList > li{
+			border: solid 1px;
+			margin-bottom: 15px;
+		}
+		.usersBuildList .buildID{
+			text-align: center;
+			margin-bottom: 0px;
+			padding-top: 10px;
+			padding-bottom: 5px;
+			border-bottom: solid 1px;
+			position: relative;
+		}
+		.usersBuildList .listofUsers{
+		    padding: 10px 20px;
+		}
+		.usersBuildList .listofUsers > p{
+			display: inline-block;
+	    width: auto;
+	    padding: 5px 15px;
+	    margin: 0;
+	    border: solid 1px;
+	    border-radius: 6px;
+	    margin-right: 10px;
+	    margin-top: 5px;
+	    margin-bottom: 5px;
+		}
+		.usersBuildList button{
+			position: absolute;
+			top: 1px;
+			right: 0;
+		}
+		.choose {
+			width:100%;
+		}
+		.choose .form-group {
+	    width: 50%;
+	    float: left;
+	    padding: 10px 20px 10px 10px;
+		}
+		.userslog{
+			padding-left: 0px;
+		}
+		.userslog li {
+			border: solid 1px;
+			margin-bottom: 10px;
+			margin-top: 10px;
+			padding: 10px 5px;
+			list-style-type: none;
+		}
+		.poslog{
+			padding-left: 0px;
+		}
+		.poslog li {
+			border: solid 1px;
+			margin-bottom: 10px;
+			margin-top: 10px;
+			padding: 10px 5px;
+			list-style-type: none;
+		}
+	</style>
+
+	<script>
+	function back1() {
+			window.location = "/";
+	}
+
+	var usersRequest = null,
+			buildRequest = null;
+			botsRequest = null;
+
+	function defineplace() {
+			window.location = "/admin/define";
+		}
+		function getUsers(){
+			var ul = document.getElementById('usersSys').parentElement.nextSibling
+			getUsersRequest = function() {
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.onload = function(){
+					usersList = JSON.parse(this.responseText)
+					ul.innerHTML = ""
+					for(key in usersList){
+						var node = document.createElement('li');
+						node.innerHTML = usersList[key].id;
+						ul.appendChild(node);
+					}
+				}
+				xmlhttp.open('GET', 'admin/occupancy', true);
+				xmlhttp.send();
+			}
+			if(ul.classList.toggle('inactive')) {
+				if(usersRequest != null)
+					clearInterval(usersRequest);
+			} else {
+				getUsersRequest();
+				usersRequest = setInterval(getUsersRequest, 10000);
+			}
+		}
+
+	function listuserbuild() {
+		var ul = document.getElementById('usersinbuild').parentElement.nextSibling
+		getBuildsRequest = function() {
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.onload = function(){
+				usersList = JSON.parse(this.responseText)
+
+				ul.innerHTML = ""
+				for(key in usersList){
+					var build = document.createElement('li')
+					var buildID = document.createElement('p')
+					buildID.classList.add('buildID')
+					var expandButton = document.createElement('button')
+					expandButton.classList.add('btn');
+					expandButton.classList.add('btn-link');
+					expandButton.innerHTML = 'Expand';
+					expandButton.setAttribute('type', 'button');
+					buildID.innerHTML = 'Building: ' + key;
+					buildID.appendChild(expandButton);
+					var usersContainer = document.createElement('div')
+					usersContainer.classList.add('inactive');
+					usersContainer.classList.add('listofUsers');
+					build.appendChild(buildID);
+					build.appendChild(usersContainer);
+					//document.getElementById("Buildname").innerHTML = key;
+					for (var i = 0; i < usersList[key].length; i++){
+						var node = document.createElement('p');
+						node.innerHTML = usersList[key][i].id;
+						usersContainer.appendChild(node);
+					}
+					ul.append(build);
+					expandButton.addEventListener('click', function(){
+						if(this.parentElement.parentElement.getElementsByTagName('div')[0].classList.toggle('inactive')){
+							this.innerHTML = 'Expand'
+						}else{
+							this.innerHTML = 'Collapse'
+						}
+					})
+				}
+			}
+			xmlhttp.open('GET', 'admin/occup/indabuild', true);
+			xmlhttp.send();
+		}
+
+		if(ul.classList.toggle('inactive')) {
+			if(buildRequest != null)
+				clearInterval(buildRequest);
+		} else {
+			getBuildsRequest();
+			buildRequest = setInterval(getBuildsRequest, 10000);
+		}
+
+
+	}
+	function back() {
+			window.location = "/admin";
+	}
+	window.onload = function(){
+			 // EVENT LISTENTERS
+			 document.getElementById('usersSys').addEventListener('click', getUsers)
+			 document.getElementById('usersinbuild').addEventListener('click', listuserbuild)
+			 document.getElementById('LaunchBoT').addEventListener('click', Bots)
+
+			 // EVENT LISTENERS HISTORICO
+			 selectUserHistory = document.getElementById('selectUserHistory').querySelector('select')
+			 selectBuildHistory = document.getElementById('selectBuildHistory').querySelector('select')
+			 document.addEventListener('click', function(event) {
+				 if(selectUserHistory.contains(event.target)){
+					 selectBuildHistory.disabled = true;
+				 }else if (selectBuildHistory.contains(event.target)){
+					 selectUserHistory.disabled = true;
+				 }else {
+					 selectBuildHistory.disabled = false;
+					 selectUserHistory.disabled = false;
+				 }
+				});
+				document.getElementById('History').addEventListener('click', function() {
+					if(!document.getElementsByClassName('history')[0].classList.toggle('inactive')){
+						requestUsersListHistory();
+					 	requestBuildsList();
+					}
+
+				})
+				document.getElementById('requestHistory').addEventListener('click', requestHistory);
+
+	}
+
+		//Fazer o receive de dados (dono_id, build_id)
+		function rcv(){
+		//	<li>Key  <a href="localhost:5001/Bot/AcceptBot/Key"></li>
+			}
+		//Fazer o post com botID
+		function accepting(key){
+			var json = {
+				Botkey : key,
+			}
+			console.log(key)
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open('POST', '/Bot/AcceptBot', true);
+			xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+			xmlhttp.send(JSON.stringify(json));
+			xmlhttp.onload = function(){
+				usersList = JSON.parse(this.responseText)
+			}
+			}
+
+				//Fazer o receive da pending List
+				function Bots(){
+					var ul = document.getElementById('LaunchBoT').parentElement.nextSibling
+					getBotsRequests = function() {
+						var xmlhttp = new XMLHttpRequest();
+						xmlhttp.onload = function(){
+							botsList = JSON.parse(this.responseText)
+							console.log(botsList)
+							ul.innerHTML = ""
+							if (botsList != "Não existem Bots em fila de espera") {
+							for(key in botsList){
+								let i=key;
+								console.log(key)
+								var node = document.createElement('li');
+								node.innerHTML ='Chave: '+key+ ' ID-Edificio: ' + botsList[key].Build_ID + ' Nome-Edificio: '+botsList[key].B_name+' <a href="javascript:accepting('+ key +')">Inserir!</a>' ;
+								ul.appendChild(node) ;
+							}
+						}else{
+						var node = document.createElement('li');
+						node.innerHTML = "Não existem Bots em fila de espera!";
+						ul.appendChild(node);
+					}
+				}
+						xmlhttp.open('GET', 'Bot/registry', true);
+						xmlhttp.send();
+					}
+
+					if(ul.classList.toggle('inactive')) {
+						if(botsRequest != null)
+							clearInterval(botsRequest);
+					} else {
+						getBotsRequests();
+						botsRequest = setInterval(getBotsRequests, 20000);
+					}
+
+				}
+			//Request de nomes de edifícios
+			requestBuildsList = function() {
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.onload = function(){
+					usersList = JSON.parse(this.responseText)
+					console.log(usersList)
+					selectBuildHistory.innerHTML = '';
+					let ul = document.getElementsByClassName('userslog')[0]
+					ul.innerHTML = '';
+					let ul2 = document.getElementsByClassName('poslog')[0]
+					ul2.innerHTML = '';
+					for(key in usersList){
+						let option = document.createElement('option');
+						option.innerText = usersList[key]
+						selectBuildHistory.appendChild(option)
+					}
+				}
+				xmlhttp.open('POST', 'admin/occupancy', true);
+				xmlhttp.send();
+			}
+
+
+		//Request Lista de users
+		requestUsersListHistory = function() {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.onload = function(){
+				usersList = JSON.parse(this.responseText)
+				selectUserHistory.innerHTML = '';
+				let ul = document.getElementsByClassName('userslog')[0]
+				ul.innerHTML = '';
+				let ul2 = document.getElementsByClassName('poslog')[0]
+				ul2.innerHTML = '';
+				for(key in usersList){
+					let option = document.createElement('option');
+					option.innerText = usersList[key].id
+					selectUserHistory.appendChild(option)
+				}
+			}
+			xmlhttp.open('GET', 'admin/occupancy', true);
+			xmlhttp.send();
+		}
+		//Request log
+		requestHistory = function() {
+			if(!selectUserHistory.disabled){
+				// Request do user
+				let user = selectUserHistory.selectedOptions[0].innerText
+				requestUserHistory(user);
+				request_user_pos_history(user);
+			}else{
+				// Request do Building
+				let build = selectBuildHistory.selectedOptions[0].innerText
+				console.log('requesting build: ', build)
+				requestbuildhistory(build);
+				 request_build_pos_history(build);
+			}
+
+			function requestUserHistory(user){
+				var json = {
+					user : user,
+					type : 0,
+				}
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open('POST', 'admin/log', true);
+				xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+				xmlhttp.send(JSON.stringify(json));
+				xmlhttp.onload = function(){
+					let log = JSON.parse(this.responseText)
+					let ul = document.getElementsByClassName('userslog')[0]
+					ul.innerHTML = '';
+						var elemento
+					for(key in log){
+						let li = document.createElement('li');
+						for(element in log[key]){
+							if(element == 'timestamp') {
+								//log[key][element] = (new Date(parseFloat(log[key][element]) * 1000)).toLocaleDateString() + " " + (new Date(parseFloat(log[key][element]) * 1000)).toLocaleTimeString();;
+								elemento= 'Instante';
+							}
+							if(element == 'message') {
+								elemento= 'Mensagem';
+							}
+							if(element == 'sender') {
+								elemento= 'Enviado por';
+								}
+							if(element == 'build') {
+								elemento= 'Local';
+							}
+							li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+						}
+						ul.appendChild(li);
+					}
+				}
+			}
+
+			function requestbuildhistory(build){
+				var json = {
+					user : build,
+					type : 1,
+				}
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open('POST', 'admin/log', true);
+				xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+				xmlhttp.send(JSON.stringify(json));
+				xmlhttp.onload = function(){
+					let log = JSON.parse(this.responseText)
+					let ul = document.getElementsByClassName('userslog')[0]
+					ul.innerHTML = '';
+					console.log("aqui")
+					console.log(log)
+					console.log(build)
+					var elemento
+						for(key in log){
+							let li = document.createElement('li');
+							for (i in log[key]){
+							for(element in log[key][i]){
+								if(element == 'timestamp') {
+									//log[key][i][element] = (new Date(parseFloat(log[key][i][element]) * 1000)).toLocaleDateString() + " " + (new Date(parseFloat(log[key][i][element]) * 1000)).toLocaleTimeString();
+									elemento= 'Instante';
+								}
+								if(element == 'message') {
+									elemento= 'Mensagem';
+								}
+								if(element == 'sender') {
+									elemento= 'Enviado por';
+								}
+								if(element == 'build') {
+									elemento= 'Local';
+								}
+								console.log(log[key][i]['build'])
+
+									li.innerHTML += (elemento + ': ' + log[key][i][element] + '<br>');
+
+							}
+							ul.appendChild(li)
+						}
+							//ul.appendChild(li);
+						}
+				}
+			}
+			//History of positions
+			function request_user_pos_history(user){
+				var json = {
+					user : user,
+					type : 2,
+				}
+				var x=0
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open('POST', 'admin/log', true);
+				xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+				xmlhttp.send(JSON.stringify(json));
+				xmlhttp.onload = function(){
+					let log = JSON.parse(this.responseText)
+					let ul = document.getElementsByClassName('poslog')[0]
+					ul.innerHTML = '';
+
+					console.log(user)
+					var elemento
+						for(key in log){
+							console.log(log[key])
+							let li = document.createElement('li');
+							for(element in log[key]){
+								if(element == 'timestamp') {
+									//log[key][element] = (new Date(parseFloat(log[key][element]) * 1000)).toLocaleDateString() + " " + (new Date(parseFloat(log[key][element]) * 1000)).toLocaleTimeString();
+									elemento= 'Instante';
+									li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+								}
+								if(element == 'Entrou') {
+									if(log[key][element]=="Fora de Edificios definidos"){
+										elemento='Local'
+									}else{
+										elemento= 'Entrou';
+									}
+									li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+								}
+								if(element == 'Saiu') {
+									if(log[key][element]!="Fora de Edificios definidos"){
+											elemento= 'Saiu';
+									li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+									}else{
+								 		x=1;
+									}
+
+								}
+
+							}
+							if (x==0){
+								ul.appendChild(li);
+							}
+							x=0
+						}
+				}
+			}
+		//History of positions in da building
+
+			function request_build_pos_history(build){
+				var json = {
+					user : build,
+					type : 3,
+				}
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open('POST', 'admin/log', true);
+				xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+				xmlhttp.send(JSON.stringify(json));
+				xmlhttp.onload = function(){
+					let log = JSON.parse(this.responseText)
+					let ul = document.getElementsByClassName('poslog')[0]
+					ul.innerHTML = '';
+
+					console.log(build)
+					console.log(log)
+					var elemento
+						for(key in log){
+							console.log(log[key])
+							let li = document.createElement('li');
+							for(element in log[key]){
+								if(element == 'timestamp') {
+									//log[key][element] = (new Date(parseFloat(log[key][element]) * 1000)).toLocaleDateString() + " " + (new Date(parseFloat(log[key][element]) * 1000)).toLocaleTimeString();
+									elemento= 'Instante';
+										li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+								}
+								if(element == 'Entrou') {
+										elemento= key+' Entrou';
+										li.innerHTML += (elemento + '<br>');
+									}
+									if(element == 'Saiu') {
+										elemento= key+' Saiu';
+										li.innerHTML += (elemento + '<br>');
+									}
+									//	li.innerHTML += (elemento + ': ' + log[key][element] + '<br>');
+
+							}
+							ul.appendChild(li);
+						}
+				}
+			}
+		}
+
+	</script>
+	</head>
+
+	<body>
+		<div class="container">
+			<br/><h1 class="form-signin-heading">Administrador</h1>
+			<div id ="buttons">
+			<form name="action">
+			<p>
+				<button class="btn btn-lg btn-info btn-block" type="button" onclick="defineplace()">Definir Localização</button>
+			</p>
+
+			<p>
+				<button class="btn btn-lg btn-info btn-block" type="button" id="usersSys">Listar Utilizadores</button>
+				<ul class="inactive">
+				</ul>
+			</p>
+
+
+			<p>
+				<button class="btn btn-lg btn-info btn-block" type="button" id="usersinbuild">Listar Utilizadores num Edificío</button>
+				<ul class="usersBuildList inactive">
+				</ul>
+			</p>
+
+
+			<p>
+				<button class="btn btn-lg btn-info btn-block" type="button" id="History">Histórico</button>
+				<div class='history inactive'>
+					<div class='choose'>
+						<div class="form-group" id="selectUserHistory">
+						  <label for="sel1">Utilizadores:</label>
+						  <select class="form-control" id="sel1">
+						  </select>
+						</div>
+						<div class="form-group" id="selectBuildHistory">
+						  <label for="sel2">Buildings:</label>
+						  <select class="form-control" id="sel2">
+						  </select>
+						</div>
+					</div>
+				<center style="width:100%; margin:auto;"><button style="width:22%;" class="btn btn-success" type="button" id="requestHistory">Obter!</button></center>
+				<h5>Mensagens:</h5>
+				<ul class="userslog">
+				</ul>
+				<h5>Movimentos:</h5>
+				<ul class="poslog">
+				</ul>
+			</div>
+		</p>
+				<p>
+					<button class="btn btn-lg btn-info btn-block" type="button" id="LaunchBoT">Lançar BOT</button>
+							<ul class="inactive">
+
+							</ul>
+				</p>
+				<p><button class="btn btn-lg btn-info btn-block" type="button"onclick="back1()">Voltar</p>
+		</div> <!-- /container -->
+			</form>
+
+		<!-- Bootstrap core JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+    </body>
+</html>

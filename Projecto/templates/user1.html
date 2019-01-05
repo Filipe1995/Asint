@@ -1,0 +1,267 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+
+<style>
+.inactive{
+	display: none;
+}
+	.received{
+		float:left;
+		width: 100%;
+	}
+	.username{
+		font-weight: bold;
+	}
+	.message{
+
+	}
+	.timestamp{
+		font-style: italic;
+		font-size: 10px;
+	}
+	#receivedMessages{
+		max-height: 250px;
+		overflow-y: auto;
+	}
+
+	.mine{
+		width:100%;
+		text-align:right;
+	}
+
+</style>
+
+<script>
+var userID = '{{UserID}}'
+var usersList = {}
+var lat = 0,
+		lon = 0;
+var input=10;
+function back() {
+		window.location.href = "/";
+}
+/////
+function joinsys(){
+	//alert(roomID);
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("GET", '/checkedin/' + '{{UserID}}', true);
+	xmlhttp.send();
+}
+	function sendMessage(){
+		var json = {
+			user_id : userID,
+			message : document.getElementById('inputMessage').value,
+			user_loc : document.getElementById('localization').innerHTML,
+			range : input,
+		}
+
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open('POST', 'user/message', true);
+		xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+		xmlhttp.send(JSON.stringify(json));
+
+		messageBox = document.getElementById('receivedMessages')
+		date = new Date();
+		hour = date.getHours()
+		minutes = date.getMinutes()
+		template = `
+			<p class="mine">
+				<span class="message">${document.getElementById('inputMessage').value}</span>
+				<span class="timestamp">${hour}:${minutes}</span>
+			</p>
+		`
+		messageBox.innerHTML += template
+
+		document.getElementById('inputMessage').value = '';
+	}
+	function whichbuilding(){
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onload = function(){
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+			nome = JSON.parse(xmlhttp.responseText)
+			if(nome ==""){
+				nome="Fora de Edificios definidos"
+			}
+			/*var ul = document.getElementById('localization').parentElement.nextSibling
+			ul.innerHTML = ""
+				var node = document.createElement('li');
+				node.innerHTML = nome;
+				ul.appendChild(node);*/
+				console.log(nome);
+			}
+			document.getElementById("localization").innerHTML=nome
+		}
+		xmlhttp.open('GET', '/user/building/'+userID, true);
+		xmlhttp.send();
+	}
+	setInterval(whichbuilding, 15000);
+
+	function MsgCheck() {
+		var json = {
+			user_id : userID,
+			user_loc : document.getElementById('localization').innerHTML,
+		}
+		console.log(json)
+		var xmlhttp = new XMLHttpRequest()
+		xmlhttp.open('POST', 'user/getMessages', true);
+		xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+		xmlhttp.send(JSON.stringify(json));
+
+		xmlhttp.onload = function(){
+			messages = JSON.parse(this.responseText)
+			messageBox = document.getElementById('receivedMessages')
+			date = new Date();
+			hour = date.getHours()
+			minutes = date.getMinutes()
+
+			messages.forEach(function(message){
+				console.log(message)
+				template = `
+					<p class="received">
+						<span class="username">${message.sender}:</span>
+						<span class="message">${message.message}</span>
+						<span class="timestamp">${hour}:${minutes}</span>
+					</p>
+				`
+				messageBox.innerHTML += template
+
+			})
+			//var ul = document.getElementById('getUsers').parentElement.nextSibling
+			//ul.innerHTML = ""
+			//for(key in usersList){
+			//	var node = document.createElement('li');
+		//	//	node.innerHTML = usersList[key].username;
+			//	ul.appendChild(node);
+			}
+		}
+	setInterval(MsgCheck, 1500);
+	function updateCoordinates(){
+		console.log('before updateCoordinates')
+		navigator.geolocation.getCurrentPosition(function(location){
+			lat = location.coords.latitude  //(Math.random() * (1  - (-1)) + (-1));
+			lon = location.coords.longitude  //(Math.random() * (1  - (-1)) + (-1));
+			console.log('updated lat and lon')
+		})
+		console.log('after updateCoordinates')
+	}
+	function Updatelocation(){
+		console.log('requesting update location')
+		updateCoordinates();
+		var json = {
+			user_id : userID,
+			lat : lat,
+			lon : lon,
+			user_loc : document.getElementById('localization').innerHTML,
+		}
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open('POST', 'user/location', true);
+		xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+		xmlhttp.send(JSON.stringify(json));
+
+	}
+	setInterval(Updatelocation, 15000);
+
+var perto_user= null;
+function perto(){
+	var ul = document.getElementById('getUsers').parentElement.nextSibling
+	 getNearbyUsers = function(){
+		var json = {
+			user_id : userID,
+			range: input,
+		}
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.open('POST', 'user/nearby', true);
+		xmlhttp.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+		xmlhttp.send(JSON.stringify(json));
+		xmlhttp.onload = function(){
+			usersList = JSON.parse(this.responseText)
+			ul.innerHTML = ""
+			for(key in usersList){
+				var node = document.createElement('li');
+				node.innerHTML = usersList[key].username;
+				ul.appendChild(node);
+			}
+		}
+	}
+
+	if(ul.classList.toggle('inactive')) {
+		if(perto_user != null)
+			clearInterval(perto_user);
+	}else{
+		getNearbyUsers();
+		console.log(perto_user);
+		perto_user = setInterval(getNearbyUsers, 10000);
+	}
+}
+//	document.addEventListener('click')
+
+	window.onload = function(){
+			console.log('onload');
+			 updateCoordinates();
+			 joinsys();
+			 MsgCheck();
+			 getLocation();
+			 Updatelocation();
+
+			 // EVENT LISTENTERS
+			 document.getElementById('getUsers').addEventListener('click', perto)
+			 document.getElementById('sendMessage').addEventListener('click', sendMessage)
+	}
+	function getrange(){
+	 	input = document.getElementById("alcance").value;
+    alert(input);
+	}
+</script>
+<body>
+
+<div class="container">
+<br /><h1 class="form-signin-heading">Bem-vindo Utilizador {{ UserID }}</h1>
+<br /><h2 class="form-signin-heading">A sua Localização é:</h2>
+			<p id="demo"></p>
+			<p id="demo2"></p>
+			<h4 class="form-signin-heading">Nome do edifício:</h4>
+					<ul><li><h6 id="localization"></h6></li></ul>
+			<p></p>
+			<h5 class="form-signin-heading">Defina o Range em metros:</h5>
+			<h7 class="form-signin-heading">(Nota: Default = 10 metros)</h7>
+			<p></p>
+			<button id="sendrange" class="btn btn-primary" type="button" onclick="getrange()">Definir</button>
+			<input type="text" name="range" id="alcance">
+
+			<script>
+			var x = document.getElementById("demo");
+			var y = document.getElementById("demo2");
+			function getLocation() {
+			    if (navigator.geolocation) {
+			        navigator.geolocation.getCurrentPosition(showPosition);
+			    } else {
+			        x.innerHTML = "Geolocation is not supported by this browser.";
+			        y.innerHTML = "Geolocation is not supported by this browser.";
+			    }
+			}
+			function showPosition(position) {
+			    x.innerHTML = "Latitude: " + position.coords.latitude;
+			    y.innerHTML = "Longitude: " + position.coords.longitude;
+			}
+			</script>
+	<p> </p>
+	<p>
+		<button class="btn btn-lg btn-info btn-block" id="getUsers" type="button" >Ver Utilizadores por perto</button>
+		<ul class="inactive">
+
+		</ul>
+	</p>
+	<p>
+		<div id="receivedMessages">
+
+		</div>
+		<textarea id="inputMessage" style="margin-bottom:20px; width:100%;" placeholder="Introduza texto aqui..." rows="2" cols="50"></textarea>
+		<button id="sendMessage" class="btn btn-lg btn-info btn-block" type="button">Enviar Msg</button>
+	</p>
+  <p><button class="btn btn-lg btn-info btn-block" type="button" onclick="back()">Logout</button></p><br/>
+</div>
+</body>
+</html>

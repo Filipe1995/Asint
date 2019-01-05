@@ -1,0 +1,9 @@
+import mysql.connector
+
+mydb = mysql.connector.connect(
+  host="db.tecnico.ulisboa.pt",
+  user="ist178685",
+  passwd="swkr1720"
+)
+
+print(mydb)

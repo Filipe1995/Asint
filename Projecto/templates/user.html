@@ -1,0 +1,277 @@
+<html>
+	<head>
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+	<link rel="icon" href="https://favicon-generator.org/favicon-generator/htdocs/favicons/2015-01-19/562ca3f880db447172bd28f9e89cf197.ico">
+	<script>
+
+	function Listing() {
+		// Declare variables
+		var input, filter, ul, li, a, i;
+		input = document.getElementById('myInput');
+		filter = input.value.toUpperCase();
+		ul = document.getElementById("myUL");
+		li = ul.getElementsByTagName('li');
+
+
+		// Loop through all list items, and hide those who dont match the search query
+		for (i = 0; i < li.length; i++) {
+			a = li[i].getElementsByTagName("a")[0];
+			if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+				li[i].style.display = "";
+			} else {
+				li[i].style.display = "none";
+			}
+		}
+	}
+
+
+/*
+	function RoomSearch() {
+		//var input, filter, i;
+		//input = document.getElementById('myRoom');
+		//filter = input.value.toUpperCase();
+		filter = document.getElementById("room").value;
+		//ul = document.getElementById("myUL");
+		//li = ul.getElementsByTagName('li');
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				alert(xmlhttp.responseText);
+				// Loop through all list items, and hide those who dont match the search query				
+				//a = xmlhttp.responseText[i].getElementsByTagName("a")[0];
+				//if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+				//for (i = 0; i < xmlhttp.responseText.length; i++) {
+				//	content = '<br /><h1 class="form-signin-heading">Found this:' + xmlhttp.responseText[i] + '</h1>';
+				//}
+				//document.getElementById("Users").innerHTML += content;
+			}
+		}
+		xmlhttp.open("GET", "/user/search/" + filter, true);
+		xmlhttp.send();
+	}
+*/
+
+	function loadCampus() {
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				
+				myObj = JSON.parse(xmlhttp.responseText);
+				content = '<br /><h1 class="form-signin-heading">User: {{userID}} - {{Username}} </h1>';
+				content += '\<div class="container">\<input type="text" class="form-control" id="myInput" onkeyup="Listing()" placeholder="Search for space on the list below..">\<ul id="myUL"> <br />';
+				for (var i=0; i<myObj.length; i++){
+					content += '<li><a href="#" class="lead" onclick="loadBuildings(' + myObj[i]['id'] + ')">'+ myObj[i]['name']+'</a></li>';
+				}
+				content += '</ul> </div>';
+				document.getElementById("Disp").innerHTML = content;
+				document.getElementById("Users").innerHTML = ' ';
+			}
+		}
+		xmlhttp.open("GET", "/user/campus", true);
+		xmlhttp.send();
+	}
+
+
+	function loadBuildings(campusID) {
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				myObj = JSON.parse(xmlhttp.responseText);
+				//alert(myObj['containedSpaces']);
+				if (myObj['containedSpaces'] == '') {
+					content = roomOccup(myObj);								
+				}else {
+					content = '<br /><h1 class="form-signin-heading">User: {{userID}} - {{Username}} </h1>';
+					content = content + '\<div class="container">\<input type="text" class="form-control" id="myInput" onkeyup="Listing()" placeholder="Search for space..">\<ul id="myUL"> <br />';
+					for (var i=0; i<myObj['containedSpaces'].length; i++){
+						content = content + '<li><a href="#" class="lead" onclick="loadBuildings(' + myObj['containedSpaces'][i]['id'] + ')">' + myObj['containedSpaces'][i]['type'] + ':  ' + myObj['containedSpaces'][i]['name'] + '</a></li>';
+					}
+				}
+
+				if(myObj['type'] == "CAMPUS"){	
+					content = content + '<p><button class="btn btn-info btn-block" type="button" onclick="loadCampus()">Back to previous space</button></p>';
+				}else {
+					content = content + '<p><button class="btn btn-info btn-block" type="button" onclick="loadBuildings(' + myObj['topLevelSpace']['id'] + ')">Back to previous space</button></p>';
+				}
+				content = content + '</ul> </div>';		
+				document.getElementById("Disp").innerHTML = content;
+				document.getElementById("Users").innerHTML = ' ';
+			}
+		}
+		xmlhttp.open("GET", "/user/campus/" + campusID, true);
+		xmlhttp.send();
+	}
+	
+
+	function roomOccup(myObj){
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				//alert(xmlhttp.responseText);
+				content = '<br /><h1 class="form-signin-heading">User: {{userID}} - {{Username}} </h1>';
+				content = content + '<p><button class="btn btn-info btn-block" type="button" onclick="loadCampus()">Back to Campus Selection</button></p>';
+				content = content + '<p><button class="btn btn-info btn-block" type="button" onclick="loadBuildings(' + myObj['topLevelSpace']['id'] + ')">Back to previous space</button></p>';
+				content = content + '<h4 class="lead"> Description: ' + myObj['description'] + '<br /> Normal Capacity: ' + myObj['capacity']['normal'] + '<br /> Exam Capacity: ' + myObj['capacity']['exam'] + '<\h4>';				
+				if(xmlhttp.responseText.substring(0,13) != "Room is full!"){
+					Usercontent = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+		    	}else{
+		    		content = content + '<h4 class="lead text-center">Room is at full capacity, unable to check in!<\h4>'
+		    		Usercontent = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+		    	}
+		    	content = checkinout(content, myObj); //Checkin  Checkout buttons		
+			}
+			document.getElementById("Disp").innerHTML = content;
+			document.getElementById("Users").innerHTML = Usercontent;
+		}
+		xmlhttp.open("GET", '/user/space/' + myObj['id'], true);
+		xmlhttp.send();
+	}
+	
+	function checkinout(content, myObj){
+		//alert (roomID);
+		content = content + '<p><button class="btn btn-success btn-block" type="button" onclick="checkIn(' + myObj['id'] + ')">Check In</button></p>';
+		content = content + '<p><button class="btn btn-danger btn-block" type="button" onclick="checkOut(' + myObj['id'] + ')">Check Out</button></p>';
+		return content;
+	}
+
+    function checkIn(roomID){
+    	//alert(roomID);
+	    var xmlhttp = new XMLHttpRequest();
+	    xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		    	//alert('123');
+		    	//alert(xmlhttp.responseText);
+		    	MsgCheck();
+		    }
+		    //document.getElementById("Users").innerHTML = ' ';
+			document.getElementById("Users").innerHTML = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+			
+	    }
+	    xmlhttp.open("GET", '/checkin/' + roomID + '/{{userID}}', true);
+	    xmlhttp.send();
+	}
+
+
+	function checkOut(roomID){
+		//alert (roomID);
+	    var xmlhttp = new XMLHttpRequest();
+	    xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		    	//alert('123');
+		    	//alert(xmlhttp.responseText);
+		    	//alert(xmlhttp.responseText.substring(0,11));
+		    	if(xmlhttp.responseText.substring(0,11) != "Checked Out"){
+		    		alert('You are not checked in in this room, or not at all');
+		    	}
+		    MsgCheck();
+		    }
+		    //document.getElementById("Users").innerHTML = ' ';
+			document.getElementById("Users").innerHTML = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+	    }
+	    xmlhttp.open("GET", '/checkout/' + roomID + '/{{userID}}', true);
+	    xmlhttp.send();
+	}
+
+
+	/*
+	function submit(form) {
+		//alert(form.userID.value);
+		if (form.userID.value.length == 0 || form.Username.value.length == 0) {
+		    window.alert("User can't have empty name");
+		    return "";
+		}
+
+		var xmlhttp = new XMLHttpRequest();
+	    xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				//alert(xmlhttp.responseText);
+		    	if (xmlhttp.responseText == "1") {
+		        	//loadCampus(form.userID.value,form.Username.value);
+		        	//window.location = "/login/subs/success";		           
+		        } else {
+		        	alert("User not registered");
+		        }
+		    }
+		    //document.getElementById("Users").innerHTML = ' ';
+			//document.getElementById("Users").innerHTML = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+	    }
+	    xmlhttp.open("GET", '/login/subs/' + form.userID.value + '/' + form.Username.value, true);
+	    xmlhttp.send();
+	    return "ok";
+	}*/
+/*
+	function start(form){
+		
+
+		//submit(form)
+	    if( submit(form) ) {
+	    	userID = form.userID.value;
+	    	Username = form.Username.value;
+	    	//alert(userID + ' - ' + Username); 
+	    	loadCampus(userID, Username);
+	    }
+	    
+	    //document.getElementById("Disp").innerHTML = '<p> </p>';
+	    //loadCampus(form.userID.value,form.Username.value);
+	    //location.reload();
+	}*/
+
+
+	function MsgCheck() {
+		
+		var xmlhttp = new XMLHttpRequest();
+	    xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		    	//alert(xmlhttp.responseText);
+		    	if(xmlhttp.responseText){
+		    		document.getElementById("Msg").innerHTML = '<h4 class="lead">Message for your room:<br />'+ xmlhttp.responseText + '<\h4>';
+		    	} else {
+		    		document.getElementById("Msg").innerHTML = '';
+		    	}
+		    }
+		    //document.getElementById("Users").innerHTML = ' ';
+			//document.getElementById("Users").innerHTML = '<h4 class="lead">'+ xmlhttp.responseText + '<\h4>';
+	    }
+	    xmlhttp.open("GET", '/user/message/{{userID}}', true);
+	    xmlhttp.send();
+
+	}
+
+	 window.onload = function(){
+        loadCampus();
+        MsgCheck();
+ 	}
+	
+	var intervalID = setInterval(function() {MsgCheck();}, 10000);
+	//var intervalID = scope.setInterval(MsgCheck(), 10000);
+
+
+	</script>
+	</head>
+	
+	<body>
+
+		<div class="container">
+			<form name="yes">
+			
+			
+				<div id="Disp">
+					<p> </p>					
+				</div>
+
+				<div id="Users">
+					<p> </p>
+				</div>
+
+				<div id="Msg">
+					<p> </p>
+				</div>
+
+			</form>
+		</div> <!-- /container -->
+
+		<!-- Bootstrap core JavaScript ================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+    </body>
+</html>

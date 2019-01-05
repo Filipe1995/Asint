@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+	<head>
+
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+	<script>
+
+		function adminTry(){
+			content = '<br /><h2 class="form-signin-heading">Sign in as administrator</h2>';
+			content = content + 'Username<input type="text" class="form-control" placeholder="Admin Username" name="userid" required autofocus/>';
+			content = content + 'Password<input type="password" class="form-control" placeholder="Password" name="pswrd" required/> <br />';
+			content = content + '<button class="btn btn-lg btn-danger btn-block" onclick="return check(this.form)" type="Submit">Sign In</button> <br /><br />';
+			content = content + '<p><button class="btn btn-lg btn-info btn-block" type="button" onclick="gotoUser()">Login como Utilizador</button></p>';
+
+			document.getElementById("Disp").innerHTML = content;
+		}
+
+		function check(form){
+			if(form.userid.value == "admin" && form.pswrd.value == "123") {
+				window.location = "/admin"; /*abre a págino alvo quando existe match*/
+
+			}
+			else {
+				alert("O username ou a password estão errados!"); /*Mensagem de erro*/
+			}
+			return false;
+		}
+
+		function gotologin() {
+			//window.location.href = '/user'
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					//alert(xmlhttp.responseText);
+					window.location.href = xmlhttp.responseText;
+				}
+			};
+			xmlhttp.open("GET", "/login", true);
+			xmlhttp.send();
+		}
+
+	</script>
+	</head>
+
+	<body>
+		<form name="login">
+		<div class="container">
+			<div id="Disp">
+				<br /><h2 class="form-signin-heading">Tipo de Utilizador</h2> <br /> <br />
+				<p><button class="btn btn-lg btn-info btn-block" type="button" onclick="gotologin()">Utilizador</button></p> <br />
+				<p><button class="btn btn-lg btn-info btn-block" type="button" onclick="adminTry()">Administrador</button></p><br />
+			</div>
+
+		</div> <!-- /container -->
+		</form>
+
+		<!-- Bootstrap core JavaScript ================================================ -->
+		<!-- Placed at the end of the document so the pages load faster -->
+	</body>
+</html>
